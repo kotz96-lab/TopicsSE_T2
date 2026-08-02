@@ -1,0 +1,16 @@
+# Test execution + coverage
+pytest>=8.0
+pytest-cov>=5.0
+coverage>=7.4
+
+# HTTP for OpenRouter
+requests>=2.31
+python-dotenv>=1.0
+
+# Data handling / analysis / plots
+pandas>=2.2
+numpy>=1.26
+matplotlib>=3.8
+
+# Static site templating
+jinja2>=3.1

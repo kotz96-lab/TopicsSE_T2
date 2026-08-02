@@ -1,0 +1,9 @@
+{
+  "task_id": "HE_000_has_close_elements",
+  "source": "HumanEval/0",
+  "faulty_lines": [6],
+  "faulty_region": "distance comparison",
+  "mutation_type": "boundary",
+  "mutation_description": "changed '<' to '<=' in the distance-vs-threshold comparison, so pairs exactly at the threshold now incorrectly count as 'close'",
+  "notes": "Ground truth line is 1-indexed against buggy.py. Line 6 is the `if distance <= threshold:` line."
+}

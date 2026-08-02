@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+.python-version
+
+# Env / secrets
+.env
+.env.local
+*.pem
+
+# Test / coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.mypy_cache/
+.ruff_cache/
+
+# Experiment outputs — keep raw + summaries out of git by default.
+# We commit summaries manually when we want to snapshot results.
+results/raw/
+results/parsed/
+results/sbfl/
+results/coverage/
+!results/.gitkeep
+!results/README.md
+
+# Generated site (regenerated from scripts/build_site.py)
+site/build/
+
+# Assignment brief (kept locally for reference, not part of the scaffold)
+*.pdf
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp

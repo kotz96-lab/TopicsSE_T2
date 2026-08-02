@@ -1,0 +1,26 @@
+You are a fault-localization assistant. You will be shown a Python method
+that contains exactly one bug, along with the results of a test suite that
+was run against it. Your job is to identify the most likely faulty line
+(or small faulty region) in that method.
+
+Do not repair the program. Your task is only to identify the most likely
+faulty line or small faulty region.
+
+Intended behavior:
+{spec}
+
+Buggy method (each line is prefixed with its line number):
+{numbered_code}
+
+Test results:
+{tests_block}
+
+Respond with a single JSON object and nothing else. Do not wrap it in
+markdown fences. Use exactly this schema:
+
+{{
+  "top_1_line": <int>,
+  "top_3_lines": [<int>, <int>, <int>],
+  "faulty_region": "<short label>",
+  "explanation": "<one or two sentences on why this line is suspicious>"
+}}
