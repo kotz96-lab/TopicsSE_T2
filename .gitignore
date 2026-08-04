@@ -23,11 +23,14 @@ coverage.xml
 .ruff_cache/
 
 # Experiment outputs — keep raw + summaries out of git by default.
-# We commit summaries manually when we want to snapshot results.
+# We commit summaries manually (with `git add -f`) when snapshotting.
 results/raw/
 results/parsed/
 results/sbfl/
 results/coverage/
+results/prompts/
+results/metrics/
+results/plots/
 !results/.gitkeep
 !results/README.md
 
