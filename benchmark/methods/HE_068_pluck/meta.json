@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_068_pluck",
+  "source": "HumanEval/68",
+  "entry_point": "pluck",
+  "faulty_lines": [
+    37
+  ],
+  "faulty_region": "filter predicate",
+  "mutation_type": "wrong_variable",
+  "mutation_description": "filtered on `x%2 == 1` (odd) instead of `x%2 == 0` (even), so the result is the smallest odd instead of smallest even",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

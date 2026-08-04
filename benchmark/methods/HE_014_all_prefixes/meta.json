@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_014_all_prefixes",
+  "source": "HumanEval/14",
+  "entry_point": "all_prefixes",
+  "faulty_lines": [
+    12
+  ],
+  "faulty_region": "prefix slice length",
+  "mutation_type": "off_by_one",
+  "mutation_description": "took slice `string[:i]` instead of `string[:i+1]`, so each prefix is one character short (and the first prefix is empty)",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

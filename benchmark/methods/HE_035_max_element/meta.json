@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_035_max_element",
+  "source": "HumanEval/35",
+  "entry_point": "max_element",
+  "faulty_lines": [
+    12
+  ],
+  "faulty_region": "comparison operator",
+  "mutation_type": "operator",
+  "mutation_description": "flipped `>` to `<` so this computes the minimum instead of the maximum",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

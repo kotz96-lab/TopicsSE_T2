@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_031_is_prime",
+  "source": "HumanEval/31",
+  "entry_point": "is_prime",
+  "faulty_lines": [
+    20
+  ],
+  "faulty_region": "early-return guard",
+  "mutation_type": "boundary",
+  "mutation_description": "widened the early-return guard from `< 2` to `<= 2`, so 2 is incorrectly reported as not prime",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

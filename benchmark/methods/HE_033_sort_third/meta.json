@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_033_sort_third",
+  "source": "HumanEval/33",
+  "entry_point": "sort_third",
+  "faulty_lines": [
+    13
+  ],
+  "faulty_region": "stride of the sorted slice",
+  "mutation_type": "wrong_slice",
+  "mutation_description": "sorted every second element instead of every third (`l[::2]` instead of `l[::3]`)",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_047_median",
+  "source": "HumanEval/47",
+  "entry_point": "median",
+  "faulty_lines": [
+    11
+  ],
+  "faulty_region": "odd/even length check",
+  "mutation_type": "off_by_one",
+  "mutation_description": "flipped `% 2 == 1` to `% 2 == 0`, so even-length lists take the odd branch and vice versa",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

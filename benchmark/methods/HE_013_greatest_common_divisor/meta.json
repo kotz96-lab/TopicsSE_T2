@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_013_greatest_common_divisor",
+  "source": "HumanEval/13",
+  "entry_point": "greatest_common_divisor",
+  "faulty_lines": [
+    12
+  ],
+  "faulty_region": "return value",
+  "mutation_type": "operator",
+  "mutation_description": "returned `b` instead of `a` after the Euclidean loop; since b is 0 at exit this always yields 0",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

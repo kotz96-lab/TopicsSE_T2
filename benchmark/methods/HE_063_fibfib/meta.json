@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_063_fibfib",
+  "source": "HumanEval/63",
+  "entry_point": "fibfib",
+  "faulty_lines": [
+    22
+  ],
+  "faulty_region": "base case for n == 2",
+  "mutation_type": "wrong_constant",
+  "mutation_description": "base case `fibfib(2)` returns 0 instead of 1, so all recursive values are zero",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_043_pairs_sum_to_zero",
+  "source": "HumanEval/43",
+  "entry_point": "pairs_sum_to_zero",
+  "faulty_lines": [
+    21
+  ],
+  "faulty_region": "pair-sum condition",
+  "mutation_type": "invert",
+  "mutation_description": "replaced sum with product so it now returns True when either element is zero",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

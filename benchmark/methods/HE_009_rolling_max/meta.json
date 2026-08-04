@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_009_rolling_max",
+  "source": "HumanEval/9",
+  "entry_point": "rolling_max",
+  "faulty_lines": [
+    17
+  ],
+  "faulty_region": "running comparison",
+  "mutation_type": "wrong_variable",
+  "mutation_description": "used `min` instead of `max` when updating the running maximum",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

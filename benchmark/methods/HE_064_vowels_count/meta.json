@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_064_vowels_count",
+  "source": "HumanEval/64",
+  "entry_point": "vowels_count",
+  "faulty_lines": [
+    20
+  ],
+  "faulty_region": "trailing y/Y check",
+  "mutation_type": "logical_op",
+  "mutation_description": "joined the two y-check disjuncts with `and`, making the y bonus unreachable",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}
