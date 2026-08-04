@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_091_is_bored",
+  "source": "HumanEval/91",
+  "entry_point": "is_bored",
+  "faulty_lines": [
+    16
+  ],
+  "faulty_region": "sentence-start match",
+  "mutation_type": "delete_check",
+  "mutation_description": "lowercased the marker to `'i '`, breaking the requirement that sentences must begin with capital I",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

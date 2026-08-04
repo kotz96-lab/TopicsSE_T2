@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_012_longest",
+  "source": "HumanEval/12",
+  "entry_point": "longest",
+  "faulty_lines": [
+    17
+  ],
+  "faulty_region": "maxlen computation",
+  "mutation_type": "boundary",
+  "mutation_description": "took `min` instead of `max` of string lengths, returning the shortest match rather than the longest",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_005_intersperse",
+  "source": "HumanEval/5",
+  "entry_point": "intersperse",
+  "faulty_lines": [
+    20
+  ],
+  "faulty_region": "final append",
+  "mutation_type": "wrong_variable",
+  "mutation_description": "appended `numbers[0]` instead of `numbers[-1]`, so the last element becomes a duplicate of the first",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

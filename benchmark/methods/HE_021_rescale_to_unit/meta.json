@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_021_rescale_to_unit",
+  "source": "HumanEval/21",
+  "entry_point": "rescale_to_unit",
+  "faulty_lines": [
+    12
+  ],
+  "faulty_region": "numerator of rescale",
+  "mutation_type": "operator",
+  "mutation_description": "subtracted max instead of min when rescaling, so all outputs are shifted",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

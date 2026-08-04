@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_057_monotonic",
+  "source": "HumanEval/57",
+  "entry_point": "monotonic",
+  "faulty_lines": [
+    12
+  ],
+  "faulty_region": "monotonic direction check",
+  "mutation_type": "logical_op",
+  "mutation_description": "replaced `or` with `and`, so only lists that are simultaneously ascending and descending (i.e. all-equal) count as monotonic",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

@@ -62,6 +62,33 @@ cp .env.example .env
 └── docs/                   # planning + notes
 ```
 
+## Reproducing the dataset
+
+The 30 buggy methods under `benchmark/methods/` are generated from
+HumanEval by `scripts/scaffold_tasks.py` using the mutation plan in
+`scripts/task_plan.py`. To reproduce:
+
+```bash
+# 1. Download HumanEval (one-time; ~250KB)
+mkdir -p .cache
+curl -sL https://github.com/openai/human-eval/raw/master/data/HumanEval.jsonl.gz \
+  -o .cache/HumanEval.jsonl.gz
+gzip -df .cache/HumanEval.jsonl.gz
+
+# 2. Regenerate all task folders (also verifies each mutant)
+python -m scripts.scaffold_tasks
+
+# Or re-verify existing folders without regenerating:
+python -m scripts.scaffold_tasks --verify-only
+
+# Or regenerate a single task:
+python -m scripts.scaffold_tasks HE_003_below_zero
+```
+
+Verification enforces the two assignment invariants per task:
+- **original.py passes all tests**
+- **buggy.py fails ≥1 test** (mutant is not equivalent)
+
 ## How to run the pipeline
 
 Each stage is independently re-runnable. Outputs of one feed the next.

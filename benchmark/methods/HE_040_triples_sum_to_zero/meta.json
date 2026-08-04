@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_040_triples_sum_to_zero",
+  "source": "HumanEval/40",
+  "entry_point": "triples_sum_to_zero",
+  "faulty_lines": [
+    23
+  ],
+  "faulty_region": "zero-sum condition",
+  "mutation_type": "invert",
+  "mutation_description": "checked `!= 0` instead of `== 0`, inverting the condition",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

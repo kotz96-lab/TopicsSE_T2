@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_008_sum_product",
+  "source": "HumanEval/8",
+  "entry_point": "sum_product",
+  "faulty_lines": [
+    16
+  ],
+  "faulty_region": "running sum accumulator",
+  "mutation_type": "operator",
+  "mutation_description": "replaced `+=` with `-=` so the sum accumulator subtracts each element",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

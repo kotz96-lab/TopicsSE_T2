@@ -37,6 +37,9 @@ site/build/
 # Assignment brief (kept locally for reference, not part of the scaffold)
 *.pdf
 
+# HumanEval JSONL — regenerable via curl (see docs/GAMEPLAN.md)
+.cache/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_118_get_closest_vowel",
+  "source": "HumanEval/118",
+  "entry_point": "get_closest_vowel",
+  "faulty_lines": [
+    23
+  ],
+  "faulty_region": "consonants-on-both-sides check",
+  "mutation_type": "logical_op",
+  "mutation_description": "replaced `and` with `or`, so a vowel with only one consonant neighbor now qualifies",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

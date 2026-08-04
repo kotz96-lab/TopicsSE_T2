@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_018_how_many_times",
+  "source": "HumanEval/18",
+  "entry_point": "how_many_times",
+  "faulty_lines": [
+    14
+  ],
+  "faulty_region": "scan-window upper bound",
+  "mutation_type": "off_by_one",
+  "mutation_description": "dropped the `+ 1` from the range upper bound, missing matches at the last possible position",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

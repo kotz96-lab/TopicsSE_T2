@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_024_largest_divisor",
+  "source": "HumanEval/24",
+  "entry_point": "largest_divisor",
+  "faulty_lines": [
+    9
+  ],
+  "faulty_region": "divisibility check",
+  "mutation_type": "off_by_one",
+  "mutation_description": "checked `n % i == 1` instead of `== 0`, so no valid divisor is ever found",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

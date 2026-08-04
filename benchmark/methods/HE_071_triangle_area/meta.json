@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_071_triangle_area",
+  "source": "HumanEval/71",
+  "entry_point": "triangle_area",
+  "faulty_lines": [
+    13
+  ],
+  "faulty_region": "triangle-inequality check",
+  "mutation_type": "boundary",
+  "mutation_description": "changed `<=` to `<` in the inequality check, so degenerate triangles (sum of two sides == third) no longer return -1",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_026_remove_duplicates",
+  "source": "HumanEval/26",
+  "entry_point": "remove_duplicates",
+  "faulty_lines": [
+    12
+  ],
+  "faulty_region": "duplicate filter",
+  "mutation_type": "delete_check",
+  "mutation_description": "flipped `<= 1` to `>= 1`, so every element (including duplicates) passes the filter",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

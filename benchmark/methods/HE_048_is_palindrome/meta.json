@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_048_is_palindrome",
+  "source": "HumanEval/48",
+  "entry_point": "is_palindrome",
+  "faulty_lines": [
+    16
+  ],
+  "faulty_region": "palindrome comparison",
+  "mutation_type": "invert",
+  "mutation_description": "flipped `!=` to `==`, so the loop returns False on symmetric characters and True on asymmetric ones",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

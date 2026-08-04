@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_003_below_zero",
+  "source": "HumanEval/3",
+  "entry_point": "below_zero",
+  "faulty_lines": [
+    17
+  ],
+  "faulty_region": "balance sign check",
+  "mutation_type": "boundary",
+  "mutation_description": "changed strict `<` to `<=` so a zero balance now incorrectly flags as below zero",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

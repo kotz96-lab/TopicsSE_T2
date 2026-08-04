@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_052_below_threshold",
+  "source": "HumanEval/52",
+  "entry_point": "below_threshold",
+  "faulty_lines": [
+    11
+  ],
+  "faulty_region": "threshold comparison",
+  "mutation_type": "boundary",
+  "mutation_description": "changed `>=` to `>` so elements exactly equal to the threshold are wrongly accepted",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

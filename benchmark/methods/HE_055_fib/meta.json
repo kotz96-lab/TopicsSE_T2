@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_055_fib",
+  "source": "HumanEval/55",
+  "entry_point": "fib",
+  "faulty_lines": [
+    15
+  ],
+  "faulty_region": "base case for n == 1",
+  "mutation_type": "wrong_constant",
+  "mutation_description": "base case `fib(1)` returns 0 instead of 1, collapsing the whole sequence to zero",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}

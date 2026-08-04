@@ -1,0 +1,12 @@
+{
+  "task_id": "HE_011_string_xor",
+  "source": "HumanEval/11",
+  "entry_point": "string_xor",
+  "faulty_lines": [
+    12
+  ],
+  "faulty_region": "XOR helper return",
+  "mutation_type": "wrong_constant",
+  "mutation_description": "XOR helper returns '1' when the two bits match (should be '0'), inverting every bit",
+  "notes": "faulty_lines are 1-indexed against buggy.py."
+}
