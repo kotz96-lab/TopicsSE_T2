@@ -71,31 +71,30 @@ Every stage is a plain script under `scripts/` calling library code under `src/`
 
 ## Weekly rough plan (matches the assignment's milestones)
 
-**Week 1 — Foundations (this scaffolding pass)**
-- Repo skeleton, README, requirements, .gitignore
-- One example HumanEval method wired end-to-end so we know the shape
-- A working `pytest` setup with a couple of trivial infra tests
-- Mutation plan sketched out
-- Prompt templates drafted
+**Week 1 — Foundations** ✅
+- Repo skeleton, README, requirements, .gitignore.
+- One example HumanEval method wired end-to-end.
+- `pytest` setup + first infrastructure tests.
+- Mutation plan sketched out.
+- Prompt templates drafted for all four conditions.
 
-**Week 2 — Dataset + SBFL**
-- Pick and copy 30 HumanEval tasks into `benchmark/methods/`
-- Write ≥10 tests per method (many come from HumanEval; expand as needed)
-- Apply one mutation per method, record ground truth
-- Verify: original passes all tests, buggy fails ≥1
-- Run coverage + Tarantula pipeline for all 30
+**Week 2 — Dataset + SBFL** ✅
+- 30 HumanEval-based tasks under `benchmark/methods/`, ≥10 tests each.
+- One mutation per method, spread across 9 categories.
+- `scripts/scaffold_tasks.py` enforces the two invariants (original passes all, buggy fails ≥1).
+- `src/testing/runner.py` + `scripts/run_sbfl.py` — coverage-based per-test spectra + Tarantula/Ochiai rankings.
+- Baseline: Tarantula alone hits Top-1 30%, Top-3 83%, MRR 0.559.
 
-**Week 3 — LLM runs**
-- Wire up OpenRouter (`OPENROUTER_API_KEY` in env)
-- Pick two models (e.g., `openai/gpt-4o-mini` + `anthropic/claude-3.5-haiku`, or similar cheap-but-decent pair — final choice depends on OpenRouter availability + budget)
-- Run all 240 calls; save raw JSON responses
-- Parse + score → metrics tables
+**Week 3 — LLM runs** ✅
+- Two free models via OpenRouter (`openai/gpt-oss-20b:free` and `google/gemma-4-31b-it:free`).
+- `scripts/run_llm.py` covers all 30 × 2 × 4 = 240 combinations, `--dry-run` for prompt inspection.
+- `scripts/compute_metrics.py` produces per-call CSV + nested summary JSON.
+- Condition gating (A/B/C/D) enforced and unit-tested.
 
 **Week 4 — Site + polish**
-- Build the static HTML report (Overview / Dataset / Design / Validation / Results / Qualitative / Threats / Reproducibility / AI-tools)
-- Cherry-pick 3–5 qualitative examples (tests helped, Tarantula misled, plausible-but-wrong, etc.)
-- Record 5–10 min voiceover video
-- Final infra test pass + coverage report
+- Static HTML site (`scripts/build_site.py` → `site/build/index.html`) — Jinja2 template + matplotlib plots + all 9 required sections.
+- Cross-condition qualitative-example picker (tests helped / SBFL helped / SBFL misled / plausible-but-wrong / combined helped).
+- Remaining polish: video script, final review pass.
 
 ## Key design decisions worth flagging early
 

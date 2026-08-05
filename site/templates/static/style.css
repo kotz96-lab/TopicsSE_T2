@@ -150,6 +150,19 @@ dd { margin: 4px 0 0 0; }
 .example p { margin: 4px 0; }
 .example pre { margin: 6px 0 0 0; background: white; }
 
+.tag {
+  display: inline-block;
+  background: var(--accent);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-left: 6px;
+}
+
 .plots {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));

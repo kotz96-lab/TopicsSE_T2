@@ -150,30 +150,120 @@ class QualitativeExample:
     kind: str    # human-readable category, e.g. "tests helped", "tarantula misled"
 
 
-def collect_qualitative_examples(parsed_dir: Path | None = None, limit: int = 5) -> list[QualitativeExample]:
-    """Pull a handful of per-call parsed responses that make good
-    illustrative examples. Returns [] before any experiment has been run."""
+def collect_qualitative_examples(parsed_dir: Path | None = None, limit: int = 8) -> list[QualitativeExample]:
+    """Cherry-pick illustrative cross-condition examples for the site.
+
+    Groups all parsed responses by (task, model), then labels examples
+    that show interesting behaviour differences across conditions:
+
+      * tests_helped     — right in B, wrong in A (adding tests fixed it)
+      * sbfl_helped      — right in C, wrong in A (adding SBFL fixed it)
+      * combined_helped  — right in D, wrong in A and B and C
+      * sbfl_misled      — right in A, wrong in C (SBFL steered it wrong)
+      * plausible_wrong  — wrong answer with a confident explanation
+
+    Returns up to `limit` examples across categories (best-effort).
+    Falls back to the first few parsed responses if no interesting
+    cross-condition examples were found.
+    """
     p = parsed_dir or (REPO_ROOT / "results" / "parsed")
     if not p.exists():
         return []
-    examples: list[QualitativeExample] = []
+
+    all_calls: list[dict] = []
     for f in sorted(p.glob("*.json")):
-        payload = json.loads(f.read_text(encoding="utf-8"))
-        if not payload.get("explanation"):
+        try:
+            all_calls.append(json.loads(f.read_text(encoding="utf-8")))
+        except json.JSONDecodeError:
             continue
-        examples.append(QualitativeExample(
-            task_id=payload.get("task_id", ""),
-            model=payload.get("model_slug", ""),
-            condition=payload.get("condition", ""),
-            faulty_lines=(),
-            top_1_line=payload.get("top_1_line"),
-            top_3_lines=tuple(payload.get("top_3_lines", [])),
-            explanation=payload.get("explanation", ""),
-            kind="",
+
+    # Attach ground-truth to each parsed record (from meta.json).
+    meta_cache: dict[str, dict] = {}
+    for call in all_calls:
+        tid = call.get("task_id", "")
+        if tid and tid not in meta_cache:
+            meta_path = REPO_ROOT / "benchmark" / "methods" / tid / "meta.json"
+            if meta_path.exists():
+                meta_cache[tid] = json.loads(meta_path.read_text(encoding="utf-8"))
+        call["_faulty_lines"] = tuple(meta_cache.get(tid, {}).get("faulty_lines", []))
+
+    # Group by (task, model).
+    from collections import defaultdict
+    grouped: dict[tuple[str, str], dict[str, dict]] = defaultdict(dict)
+    for call in all_calls:
+        key = (call.get("task_id", ""), call.get("model_slug", ""))
+        grouped[key][call.get("condition", "")] = call
+
+    def _hit(call: dict) -> bool:
+        if not call or not call.get("is_valid"):
+            return False
+        return call.get("top_1_line") in call.get("_faulty_lines", ())
+
+    picks: list[QualitativeExample] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    def _add(call: dict, kind: str) -> None:
+        key = (call.get("task_id", ""), call.get("model_slug", ""), call.get("condition", ""))
+        if key in seen:
+            return
+        seen.add(key)
+        picks.append(QualitativeExample(
+            task_id=call.get("task_id", ""),
+            model=call.get("model_slug", ""),
+            condition=call.get("condition", ""),
+            faulty_lines=call.get("_faulty_lines", ()),
+            top_1_line=call.get("top_1_line"),
+            top_3_lines=tuple(call.get("top_3_lines") or []),
+            explanation=call.get("explanation", ""),
+            kind=kind,
         ))
-        if len(examples) >= limit:
+
+    for (task, model), by_cond in grouped.items():
+        a, b, c, d = by_cond.get("A"), by_cond.get("B"), by_cond.get("C"), by_cond.get("D")
+        # tests helped: A wrong, B right
+        if a and b and not _hit(a) and _hit(b) and b.get("explanation"):
+            _add(b, "tests helped")
+        # SBFL helped: A wrong, C right
+        if a and c and not _hit(a) and _hit(c) and c.get("explanation"):
+            _add(c, "SBFL helped")
+        # combined only: A/B/C all wrong, D right
+        if all(x is not None for x in (a, b, c, d)) and _hit(d) \
+                and not any(_hit(x) for x in (a, b, c)) and d.get("explanation"):
+            _add(d, "tests + SBFL helped")
+        # SBFL misled: A right, C wrong
+        if a and c and _hit(a) and not _hit(c) and c.get("explanation"):
+            _add(c, "SBFL misled the model")
+        # plausible-but-wrong: any valid answer that misses with a long explanation
+        for call in (a, b, c, d):
+            if call and call.get("is_valid") and not _hit(call) \
+                    and len(call.get("explanation") or "") > 60:
+                _add(call, "plausible but wrong")
+                break
+
+        if len(picks) >= limit:
             break
-    return examples
+
+    if picks:
+        return picks[:limit]
+
+    # Fallback: whatever we've got.
+    fallback: list[QualitativeExample] = []
+    for call in all_calls:
+        if not call.get("explanation"):
+            continue
+        fallback.append(QualitativeExample(
+            task_id=call.get("task_id", ""),
+            model=call.get("model_slug", ""),
+            condition=call.get("condition", ""),
+            faulty_lines=call.get("_faulty_lines", ()),
+            top_1_line=call.get("top_1_line"),
+            top_3_lines=tuple(call.get("top_3_lines") or []),
+            explanation=call.get("explanation", ""),
+            kind="uncategorized",
+        ))
+        if len(fallback) >= limit:
+            break
+    return fallback
 
 
 # ---------------- Reproducibility ----------------

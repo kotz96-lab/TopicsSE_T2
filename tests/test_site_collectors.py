@@ -81,6 +81,53 @@ class TestCollectDoc:
         assert "Threats to Validity" in text or "threat" in text.lower()
 
 
+class TestQualitativeExamples:
+    def _write(self, dir: Path, task: str, cond: str, top_1: int, is_valid: bool = True, explanation: str = "") -> None:
+        (dir / f"{task}__vendor__model__cond{cond}.json").write_text(json.dumps({
+            "task_id": task,
+            "model_slug": "vendor__model",
+            "condition": cond,
+            "is_valid": is_valid,
+            "top_1_line": top_1,
+            "top_3_lines": [top_1],
+            "faulty_region": "region",
+            "explanation": explanation,
+        }), encoding="utf-8")
+
+    def test_tests_helped_case_detected(self, tmp_path: Path, monkeypatch) -> None:
+        # Point ground-truth lookup at a real benchmark task; faulty line 6.
+        parsed = tmp_path / "parsed"
+        parsed.mkdir()
+        task = "HE_000_has_close_elements"  # ground-truth faulty line is 6
+        self._write(parsed, task, "A", top_1=99, explanation="Guessed wrong.")
+        self._write(parsed, task, "B", top_1=6, explanation="Tests revealed the boundary bug.")
+        examples = collect.collect_qualitative_examples(parsed_dir=parsed)
+        kinds = [e.kind for e in examples]
+        assert "tests helped" in kinds, f"got kinds: {kinds}"
+
+    def test_sbfl_misled_case_detected(self, tmp_path: Path) -> None:
+        parsed = tmp_path / "parsed"
+        parsed.mkdir()
+        task = "HE_000_has_close_elements"
+        self._write(parsed, task, "A", top_1=6, explanation="Spotted the operator.")
+        self._write(parsed, task, "C", top_1=7, explanation="Top of Tarantula ranking was line 7.")
+        examples = collect.collect_qualitative_examples(parsed_dir=parsed)
+        assert any(e.kind == "SBFL misled the model" for e in examples)
+
+    def test_returns_empty_when_no_parsed_dir(self, tmp_path: Path) -> None:
+        assert collect.collect_qualitative_examples(parsed_dir=tmp_path / "nope") == []
+
+    def test_falls_back_when_no_interesting_cases(self, tmp_path: Path) -> None:
+        parsed = tmp_path / "parsed"
+        parsed.mkdir()
+        task = "HE_000_has_close_elements"
+        # Only one condition, only right answer — no cross-condition contrast.
+        self._write(parsed, task, "A", top_1=6, explanation="Correct guess.")
+        examples = collect.collect_qualitative_examples(parsed_dir=parsed)
+        assert examples, "expected a fallback example"
+        assert examples[0].kind == "uncategorized"
+
+
 class TestBuildSite:
     def test_build_renders_html_with_all_required_sections(self, tmp_path: Path) -> None:
         # `--no-plots` equivalent so we don't require matplotlib in this test.

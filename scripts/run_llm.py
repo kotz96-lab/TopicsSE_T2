@@ -128,8 +128,14 @@ def _run_one(
         )
         return "ERR", str(e)[:150]
 
+    # Always persist the raw body before doing anything that might raise.
     raw_path.write_text(json.dumps(response, indent=2, ensure_ascii=False), encoding="utf-8")
-    text_len = len(openrouter.extract_text(response) or "")
+    try:
+        text_len = len(openrouter.extract_text(response) or "")
+    except openrouter.OpenRouterError as e:
+        # Response body was malformed (missing `choices`, etc.). The body
+        # is already on disk; downstream parsing will mark it invalid.
+        return "ERR", f"malformed response body: {e}"[:150]
     return "OK", f"response chars={text_len}"
 
 

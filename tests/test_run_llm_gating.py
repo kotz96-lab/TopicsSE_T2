@@ -68,6 +68,42 @@ class TestConditionGating:
             _build_inputs_for(task_with_sbfl, "Z")
 
 
+class TestRunOneErrorHandling:
+    """Regression test: malformed OpenRouter responses must NOT crash the
+    outer loop. This bit us in the first real run — one bad response body
+    killed the whole 240-call script mid-flight.
+    """
+
+    def test_malformed_response_body_persisted_and_errored(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        # Point scripts.run_llm at temp output dirs so we don't touch
+        # real results.
+        from scripts import run_llm
+        monkeypatch.setattr(run_llm, "RAW_OUT", tmp_path / "raw")
+        monkeypatch.setattr(run_llm, "PROMPTS_OUT", tmp_path / "prompts")
+
+        # Fake OpenRouter that returns a body without a `choices` field —
+        # extract_text() will raise OpenRouterError on this.
+        import src.llm.openrouter as openrouter
+        monkeypatch.setattr(
+            openrouter, "chat",
+            lambda call, **kw: {"id": "test", "model": call.model, "no_choices": True},
+        )
+
+        task_dir = REPO_ROOT / "benchmark" / "methods" / "HE_000_has_close_elements"
+        status, msg = run_llm._run_one(
+            task_dir, "vendor/model", "A",
+            dry_run=False, temperature=0.0, max_tokens=1024, skip_existing=False,
+        )
+        assert status == "ERR", f"expected ERR, got {status}: {msg}"
+        # Body must still be persisted so the parser can see the malformed
+        # payload later.
+        raw_files = list((tmp_path / "raw").glob("*.json"))
+        assert len(raw_files) == 1
+        assert "no_choices" in raw_files[0].read_text()
+
+
 class TestOutFileNaming:
     def test_filename_has_task_model_condition(self) -> None:
         name = _out_name("HE_003_below_zero", "openai/gpt-4o-mini", "B", "json")
