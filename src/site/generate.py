@@ -39,6 +39,10 @@ def build_site(*, out_dir: Path | None = None, render_plots: bool = True) -> Pat
     env_info = collect.collect_env_info()
     cfg = load_config()
 
+    # Prefer the actual models present in results; fall back to config defaults.
+    result_models = list((results.get("by_model") or {}).keys())
+    display_models = result_models if result_models else list(cfg.models or DEFAULT_MODELS)
+
     # Plots — best effort, don't fail the whole build if matplotlib is missing.
     has_plots = False
     plots_dir = out / "plots"
@@ -60,8 +64,8 @@ def build_site(*, out_dir: Path | None = None, render_plots: bool = True) -> Pat
         built_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         env=env_info,
         n_tasks=len(dataset),
-        n_models=len(cfg.models or DEFAULT_MODELS),
-        models=list(cfg.models or DEFAULT_MODELS),
+        n_models=len(display_models),
+        models=display_models,
         temperature=cfg.temperature,
         dataset=dataset,
         mutation_counts=collect.mutation_type_counts(collect.collect_dataset()),
