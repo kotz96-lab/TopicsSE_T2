@@ -1,0 +1,133 @@
+{
+  "n_calls": 240,
+  "overall": {
+    "n": 240,
+    "top1_accuracy": 0.18333333333333332,
+    "top3_accuracy": 0.2,
+    "region_accuracy": 0.18333333333333332,
+    "mrr": 0.18055555555555555,
+    "invalid_rate": 0.8
+  },
+  "by_model": {
+    "nvidia__nemotron-nano-9b-v2_free": {
+      "n": 120,
+      "top1_accuracy": 0.18333333333333332,
+      "top3_accuracy": 0.2,
+      "region_accuracy": 0.18333333333333332,
+      "mrr": 0.16666666666666666,
+      "invalid_rate": 0.8
+    },
+    "openai__gpt-oss-20b_free": {
+      "n": 120,
+      "top1_accuracy": 0.18333333333333332,
+      "top3_accuracy": 0.2,
+      "region_accuracy": 0.18333333333333332,
+      "mrr": 0.19444444444444445,
+      "invalid_rate": 0.8
+    }
+  },
+  "by_condition": {
+    "A": {
+      "n": 60,
+      "top1_accuracy": 0.18333333333333332,
+      "top3_accuracy": 0.2,
+      "region_accuracy": 0.18333333333333332,
+      "mrr": 0.1888888888888889,
+      "invalid_rate": 0.8
+    },
+    "B": {
+      "n": 60,
+      "top1_accuracy": 0.18333333333333332,
+      "top3_accuracy": 0.2,
+      "region_accuracy": 0.18333333333333332,
+      "mrr": 0.15555555555555556,
+      "invalid_rate": 0.8
+    },
+    "C": {
+      "n": 60,
+      "top1_accuracy": 0.18333333333333332,
+      "top3_accuracy": 0.2,
+      "region_accuracy": 0.18333333333333332,
+      "mrr": 0.1888888888888889,
+      "invalid_rate": 0.8
+    },
+    "D": {
+      "n": 60,
+      "top1_accuracy": 0.18333333333333332,
+      "top3_accuracy": 0.2,
+      "region_accuracy": 0.18333333333333332,
+      "mrr": 0.1888888888888889,
+      "invalid_rate": 0.8
+    }
+  },
+  "by_model_condition": {
+    "nvidia__nemotron-nano-9b-v2_free": {
+      "A": {
+        "n": 30,
+        "top1_accuracy": 0.16666666666666666,
+        "top3_accuracy": 0.2,
+        "region_accuracy": 0.16666666666666666,
+        "mrr": 0.17777777777777776,
+        "invalid_rate": 0.8
+      },
+      "B": {
+        "n": 30,
+        "top1_accuracy": 0.2,
+        "top3_accuracy": 0.2,
+        "region_accuracy": 0.2,
+        "mrr": 0.11111111111111112,
+        "invalid_rate": 0.8
+      },
+      "C": {
+        "n": 30,
+        "top1_accuracy": 0.2,
+        "top3_accuracy": 0.2,
+        "region_accuracy": 0.2,
+        "mrr": 0.2,
+        "invalid_rate": 0.8
+      },
+      "D": {
+        "n": 30,
+        "top1_accuracy": 0.16666666666666666,
+        "top3_accuracy": 0.2,
+        "region_accuracy": 0.16666666666666666,
+        "mrr": 0.17777777777777776,
+        "invalid_rate": 0.8
+      }
+    },
+    "openai__gpt-oss-20b_free": {
+      "A": {
+        "n": 30,
+        "top1_accuracy": 0.2,
+        "top3_accuracy": 0.2,
+        "region_accuracy": 0.2,
+        "mrr": 0.2,
+        "invalid_rate": 0.8
+      },
+      "B": {
+        "n": 30,
+        "top1_accuracy": 0.16666666666666666,
+        "top3_accuracy": 0.2,
+        "region_accuracy": 0.16666666666666666,
+        "mrr": 0.2,
+        "invalid_rate": 0.8
+      },
+      "C": {
+        "n": 30,
+        "top1_accuracy": 0.16666666666666666,
+        "top3_accuracy": 0.2,
+        "region_accuracy": 0.16666666666666666,
+        "mrr": 0.17777777777777776,
+        "invalid_rate": 0.8
+      },
+      "D": {
+        "n": 30,
+        "top1_accuracy": 0.2,
+        "top3_accuracy": 0.2,
+        "region_accuracy": 0.2,
+        "mrr": 0.2,
+        "invalid_rate": 0.8
+      }
+    }
+  }
+}

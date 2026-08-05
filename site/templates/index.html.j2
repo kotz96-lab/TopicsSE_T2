@@ -227,6 +227,15 @@
       Aggregated across <strong>{{ results.n_calls }}</strong> calls
       ({{ n_tasks }} tasks × {{ n_models }} models × 4 conditions).
     </p>
+    {% if results.overall.invalid_rate and results.overall.invalid_rate > 0.5 %}
+    <p class="callout">
+      <strong>Note on invalid-output rate:</strong> most invalid responses in
+      this snapshot are HTTP 429 rate-limit errors from OpenRouter's free tier
+      (50 free-model requests per day at &lt;$10 wallet balance), not model
+      failures. The "when the LLM actually responded" numbers per condition
+      appear below — those are the informative rows for RQ1–RQ5.
+    </p>
+    {% endif %}
 
     <h3>By information condition</h3>
     <table class="results">
@@ -311,11 +320,20 @@
 <section id="qualitative">
   <h2>Qualitative Analysis</h2>
   {% if qualitative %}
-  <p>Selected model explanations from the parsed responses:</p>
+  <p>Selected model explanations from the parsed responses, categorized by
+     the cross-condition behaviour they illustrate:</p>
   {% for ex in qualitative %}
   <div class="example">
-    <p><strong>{{ ex.task_id }}</strong> — model <code>{{ ex.model }}</code>, condition {{ ex.condition }}</p>
-    <p>Predicted top-1: line {{ ex.top_1_line }}; top-3: {{ ex.top_3_lines | join(", ") }}</p>
+    <p>
+      <strong>{{ ex.task_id }}</strong>
+      {% if ex.kind %}<span class="tag">{{ ex.kind }}</span>{% endif %}
+      &mdash; model <code>{{ ex.model }}</code>, condition {{ ex.condition }}
+    </p>
+    <p>
+      Ground-truth faulty line{{ 's' if ex.faulty_lines|length > 1 else '' }}:
+      <strong>{{ ex.faulty_lines | join(", ") }}</strong>.
+      Predicted top-1: line {{ ex.top_1_line }}; top-3: {{ ex.top_3_lines | join(", ") }}.
+    </p>
     <blockquote>{{ ex.explanation }}</blockquote>
   </div>
   {% endfor %}
