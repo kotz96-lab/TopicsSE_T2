@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LLMs for Fault Localization — Empirical Study</title>
+<link rel="stylesheet" href="static/style.css" />
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>LLMs for Fault Localization</h1>
+    <p class="subtitle">
+      An empirical comparison of LLMs at pointing out buggy lines in Python
+      methods, with and without test outcomes and spectrum-based ranking.
+    </p>
+    <p class="meta">
+      Topics in Software Engineering — Assignment 2 &middot;
+      Built {{ built_at }} &middot;
+      Commit <code>{{ env.git_commit[:7] }}</code>
+    </p>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#overview">Overview</a>
+    <a href="#dataset">Dataset</a>
+    <a href="#design">Design</a>
+    <a href="#validation">Infra Validation</a>
+    <a href="#results">Results</a>
+    <a href="#qualitative">Qualitative</a>
+    <a href="#threats">Threats</a>
+    <a href="#reproducibility">Reproducibility</a>
+    <a href="#ai-tools">AI Tools</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="overview">
+  <h2>Overview</h2>
+  <p>
+    This study measures how well large language models identify the faulty
+    line in a small buggy Python method, and whether extra hints —
+    passing/failing tests and a Tarantula-based suspicion ranking — actually
+    help. We compare <strong>{{ n_models }} models</strong> across
+    <strong>4 information conditions</strong> on a hand-mutated benchmark
+    of <strong>{{ n_tasks }} HumanEval methods</strong>
+    ({{ n_tasks }} × {{ n_models }} × 4 = {{ n_tasks * n_models * 4 }}
+    total LLM calls).
+  </p>
+
+  <h3>Research questions</h3>
+  <dl>
+    <dt>RQ1 — Baseline</dt>
+    <dd>How well do LLMs localize faults with only the buggy method and its spec?</dd>
+    <dt>RQ2 — Effect of tests</dt>
+    <dd>Do passing/failing test outcomes improve LLM fault-localization?</dd>
+    <dt>RQ3 — Effect of SBFL</dt>
+    <dd>Does providing a Tarantula-style ranking improve performance?</dd>
+    <dt>RQ4 — Combining</dt>
+    <dd>Does tests + SBFL help more than either alone?</dd>
+    <dt>RQ5 — Model comparison</dt>
+    <dd>Do different LLMs perform differently on the same task?</dd>
+  </dl>
+
+  {% if results.overall %}
+  <h3>Headline numbers</h3>
+  <table class="summary">
+    <thead>
+      <tr><th>Metric</th><th>Overall</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Top-1 accuracy</td><td>{{ (results.overall.top1_accuracy * 100) | round(1) }}%</td></tr>
+      <tr><td>Top-3 accuracy</td><td>{{ (results.overall.top3_accuracy * 100) | round(1) }}%</td></tr>
+      <tr><td>Region accuracy</td><td>{{ (results.overall.region_accuracy * 100) | round(1) }}%</td></tr>
+      <tr><td>Mean reciprocal rank</td><td>{{ results.overall.mrr | round(3) }}</td></tr>
+      <tr><td>Invalid-output rate</td><td>{{ (results.overall.invalid_rate * 100) | round(1) }}%</td></tr>
+    </tbody>
+  </table>
+  {% else %}
+  <p class="callout">
+    <strong>Note:</strong> real experiment results not yet available.
+    Numbers appear here once <code>scripts/run_llm.py</code> has been run
+    against OpenRouter and <code>scripts/compute_metrics.py</code> has
+    aggregated them.
+  </p>
+  {% endif %}
+</section>
+
+<section id="dataset">
+  <h2>Dataset</h2>
+  <p>
+    The benchmark contains {{ n_tasks }} short Python methods based on
+    HumanEval. Each method has:
+  </p>
+  <ul>
+    <li>a natural-language specification (docstring from HumanEval)</li>
+    <li>an <code>original.py</code> that passes all tests</li>
+    <li>a <code>buggy.py</code> with exactly one mutation applied</li>
+    <li>at least 10 pytest tests (many from HumanEval, plus hand-written extras that exercise the mutated line)</li>
+    <li>a <code>meta.json</code> with the ground-truth faulty line and mutation type</li>
+  </ul>
+
+  <h3>Mutation types (spread across {{ mutation_counts | length }} categories)</h3>
+  <table class="counts">
+    <thead><tr><th>Mutation type</th><th>Count</th></tr></thead>
+    <tbody>
+      {% for kind, count in mutation_counts.items() %}
+      <tr><td>{{ kind }}</td><td>{{ count }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>All {{ n_tasks }} benchmark tasks</h3>
+  <table class="dataset">
+    <thead>
+      <tr>
+        <th>Task</th>
+        <th>Function</th>
+        <th>Mutation type</th>
+        <th>Region</th>
+        <th>Line(s)</th>
+        <th>Tests</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in dataset %}
+      <tr>
+        <td><code>{{ row.task_id }}</code></td>
+        <td><code>{{ row.entry_point }}</code></td>
+        <td>{{ row.mutation_type }}</td>
+        <td>{{ row.faulty_region }}</td>
+        <td>{{ row.faulty_lines | join(", ") }}</td>
+        <td>{{ row.n_tests }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Example mutations</h3>
+  {% for row in dataset[:3] %}
+  <div class="example">
+    <p><strong>{{ row.task_id }}</strong> — {{ row.mutation_description }}</p>
+    <pre>{{ row.buggy_snippet }}</pre>
+  </div>
+  {% endfor %}
+</section>
+
+<section id="design">
+  <h2>Experimental Design</h2>
+
+  <h3>Models</h3>
+  <ul>
+    {% for m in models %}<li><code>{{ m }}</code></li>{% endfor %}
+  </ul>
+  <p>Decoding: <code>temperature = {{ temperature }}</code>, one call per prompt.</p>
+
+  <h3>Information conditions</h3>
+  <table class="conditions">
+    <thead>
+      <tr><th>Condition</th><th>Buggy code</th><th>Spec</th><th>Tests</th><th>Tarantula ranking</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>A — code only</td><td>&#x2714;</td><td>&#x2714;</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>B — + tests</td><td>&#x2714;</td><td>&#x2714;</td><td>&#x2714;</td><td>&mdash;</td></tr>
+      <tr><td>C — + SBFL</td><td>&#x2714;</td><td>&#x2714;</td><td>&mdash;</td><td>&#x2714;</td></tr>
+      <tr><td>D — both</td><td>&#x2714;</td><td>&#x2714;</td><td>&#x2714;</td><td>&#x2714;</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Metrics</h3>
+  <ul>
+    <li><strong>Top-1 accuracy</strong> — predicted top line equals a ground-truth faulty line</li>
+    <li><strong>Top-3 accuracy</strong> — any of the predicted top 3 lines matches</li>
+    <li><strong>Region accuracy</strong> — Top-1 line matches, OR the predicted region label mentions the ground-truth region</li>
+    <li><strong>Mean reciprocal rank (MRR)</strong> — 1/rank of the first correct line in top-3, else 0</li>
+    <li><strong>Invalid-output rate</strong> — fraction of responses missing the required JSON top_1_line</li>
+  </ul>
+
+  <h3>Prompt templates (one per condition)</h3>
+  <p>Each prompt places the buggy code with 1-indexed line prefixes and
+  asks the model to return JSON with <code>top_1_line</code>,
+  <code>top_3_lines</code>, <code>faulty_region</code>, and
+  <code>explanation</code>. Templates live in <code>prompts/</code>.</p>
+</section>
+
+<section id="validation">
+  <h2>Validation of the Experiment Infrastructure</h2>
+  <p>
+    A key part of this assignment is that the pipeline is itself software
+    we're expected to test. Our infrastructure test suite lives under
+    <code>tests/</code>:
+  </p>
+  <table class="summary">
+    <tbody>
+      <tr><td>Number of infrastructure test functions</td><td>{{ infra.n_tests }}</td></tr>
+      <tr><td>Number of test files</td><td>{{ infra.n_test_files }}</td></tr>
+      {% if infra.coverage_percent is not none %}
+      <tr><td>Overall line+branch coverage on <code>src/</code></td>
+          <td>{{ infra.coverage_percent | round(1) }}%</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <p>Tests exercise:</p>
+  <ul>
+    <li>Tarantula and Ochiai suspicion formulas (edge cases + tie-breaking)</li>
+    <li>LLM response parser (fenced JSON, prose slop, invalid inputs)</li>
+    <li>Scoring metrics (Top-1/3, MRR, region hit, invalid rate)</li>
+    <li>Mutation helpers</li>
+    <li>Prompt template rendering per condition</li>
+    <li>Coverage runner helpers (context normalization, JUnit parsing)</li>
+    <li>SBFL aggregator (spectra construction, report shape)</li>
+    <li>End-to-end: real pytest run against HE_000 with per-test coverage</li>
+    <li>Condition-gating in <code>run_llm.py</code></li>
+    <li>End-to-end: metrics pipeline against a synthetic-response fixture</li>
+  </ul>
+</section>
+
+<section id="results">
+  <h2>Results</h2>
+  {% if results.overall %}
+    <p>
+      Aggregated across <strong>{{ results.n_calls }}</strong> calls
+      ({{ n_tasks }} tasks × {{ n_models }} models × 4 conditions).
+    </p>
+
+    <h3>By information condition</h3>
+    <table class="results">
+      <thead>
+        <tr><th>Condition</th><th>N</th><th>Top-1</th><th>Top-3</th><th>Region</th><th>MRR</th><th>Invalid</th></tr>
+      </thead>
+      <tbody>
+        {% for cond, s in results.by_condition.items() %}
+        <tr>
+          <td>{{ cond }}</td>
+          <td>{{ s.n }}</td>
+          <td>{{ (s.top1_accuracy * 100) | round(1) }}%</td>
+          <td>{{ (s.top3_accuracy * 100) | round(1) }}%</td>
+          <td>{{ (s.region_accuracy * 100) | round(1) }}%</td>
+          <td>{{ s.mrr | round(3) }}</td>
+          <td>{{ (s.invalid_rate * 100) | round(1) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h3>By model</h3>
+    <table class="results">
+      <thead>
+        <tr><th>Model</th><th>N</th><th>Top-1</th><th>Top-3</th><th>Region</th><th>MRR</th><th>Invalid</th></tr>
+      </thead>
+      <tbody>
+        {% for m, s in results.by_model.items() %}
+        <tr>
+          <td><code>{{ m }}</code></td>
+          <td>{{ s.n }}</td>
+          <td>{{ (s.top1_accuracy * 100) | round(1) }}%</td>
+          <td>{{ (s.top3_accuracy * 100) | round(1) }}%</td>
+          <td>{{ (s.region_accuracy * 100) | round(1) }}%</td>
+          <td>{{ s.mrr | round(3) }}</td>
+          <td>{{ (s.invalid_rate * 100) | round(1) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h3>Per model × condition</h3>
+    <table class="results">
+      <thead>
+        <tr><th>Model</th><th>Condition</th><th>Top-1</th><th>Top-3</th><th>MRR</th><th>Invalid</th></tr>
+      </thead>
+      <tbody>
+        {% for m, per_cond in results.by_model_condition.items() %}
+          {% for cond, s in per_cond.items() %}
+          <tr>
+            <td><code>{{ m }}</code></td>
+            <td>{{ cond }}</td>
+            <td>{{ (s.top1_accuracy * 100) | round(1) }}%</td>
+            <td>{{ (s.top3_accuracy * 100) | round(1) }}%</td>
+            <td>{{ s.mrr | round(3) }}</td>
+            <td>{{ (s.invalid_rate * 100) | round(1) }}%</td>
+          </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if has_plots %}
+    <h3>Plots</h3>
+    <div class="plots">
+      <figure><img src="plots/top1_by_condition.png" alt="Top-1 by condition" /><figcaption>Top-1 accuracy by condition (per model)</figcaption></figure>
+      <figure><img src="plots/mrr_by_condition.png" alt="MRR by condition" /><figcaption>Mean reciprocal rank by condition</figcaption></figure>
+      <figure><img src="plots/invalid_by_condition.png" alt="Invalid rate by condition" /><figcaption>Invalid-output rate by condition</figcaption></figure>
+    </div>
+    {% endif %}
+  {% else %}
+    <p class="callout">
+      Results appear here once <code>scripts/run_llm.py</code> +
+      <code>scripts/compute_metrics.py</code> have been run against
+      OpenRouter. In the meantime, the same layout can be exercised
+      against synthetic-response data via
+      <code>python -m scripts.seed_synthetic_responses</code>.
+    </p>
+  {% endif %}
+</section>
+
+<section id="qualitative">
+  <h2>Qualitative Analysis</h2>
+  {% if qualitative %}
+  <p>Selected model explanations from the parsed responses:</p>
+  {% for ex in qualitative %}
+  <div class="example">
+    <p><strong>{{ ex.task_id }}</strong> — model <code>{{ ex.model }}</code>, condition {{ ex.condition }}</p>
+    <p>Predicted top-1: line {{ ex.top_1_line }}; top-3: {{ ex.top_3_lines | join(", ") }}</p>
+    <blockquote>{{ ex.explanation }}</blockquote>
+  </div>
+  {% endfor %}
+  {% else %}
+  <p class="callout">
+    Qualitative examples appear here once we have real LLM outputs to
+    cherry-pick from. Planned categories: (a) tests helped catch a bug
+    where code-only failed, (b) Tarantula pointed the model at the true
+    line, (c) Tarantula misled the model, (d) plausible-but-wrong
+    explanations.
+  </p>
+  {% endif %}
+</section>
+
+<section id="threats">
+  <h2>Threats to Validity</h2>
+  <pre class="doc">{{ docs.threats }}</pre>
+</section>
+
+<section id="reproducibility">
+  <h2>Reproducibility</h2>
+  <p>Full commands are documented in <code>README.md</code>. Short version:</p>
+  <pre>
+# 1. Setup
+python -m venv .venv
+.venv\Scripts\Activate.ps1        # Windows
+pip install -r requirements.txt
+cp .env.example .env              # add OPENROUTER_API_KEY
+
+# 2. Regenerate the dataset (verifies invariants)
+mkdir -p .cache
+curl -sL https://github.com/openai/human-eval/raw/master/data/HumanEval.jsonl.gz \
+  -o .cache/HumanEval.jsonl.gz && gzip -df .cache/HumanEval.jsonl.gz
+python -m scripts.scaffold_tasks
+
+# 3. Pipeline
+python -m scripts.run_sbfl        # per-task Tarantula rankings
+python -m scripts.run_llm         # 240 LLM calls (needs API key)
+python -m scripts.compute_metrics # aggregate metrics
+python -m scripts.build_site      # rebuild this site
+</pre>
+  <table class="summary">
+    <tbody>
+      <tr><td>Python</td><td>{{ env.python_version }}</td></tr>
+      <tr><td>Platform</td><td>{{ env.platform }}</td></tr>
+      <tr><td>Git commit</td><td><code>{{ env.git_commit }}</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="ai-tools">
+  <h2>Use of AI Tools</h2>
+  <pre class="doc">{{ docs.ai_tools }}</pre>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Generated by <code>scripts/build_site.py</code>.</p>
+  </div>
+</footer>
+
+</body>
+</html>
