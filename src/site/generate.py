@@ -1,45 +1,88 @@
-"""Assemble the static HTML report from templates + result JSON.
+"""Render the static site from data collected via `src.site.collect`
+and templates under `site/templates/`.
 
-Sections match the assignment's Section 8 requirements:
-  Overview / Dataset / Experimental Design / Validation of Infrastructure /
-  Results / Qualitative Analysis / Threats to Validity / Reproducibility /
-  Use of AI Tools.
-
-Templates live under `site/templates/` and are rendered with Jinja2.
-Output goes to `site/build/`.
+`build_site()` is the one entry point script/build_site.py calls.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import shutil
+from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+from src.pipeline.config import DEFAULT_MODELS, load_config
+from src.site import collect, plots
 
 
-TEMPLATE_DIR = Path(__file__).resolve().parents[2] / "site" / "templates"
-BUILD_DIR = Path(__file__).resolve().parents[2] / "site" / "build"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+TEMPLATE_DIR = REPO_ROOT / "site" / "templates"
+STATIC_DIR = TEMPLATE_DIR / "static"
+BUILD_DIR = REPO_ROOT / "site" / "build"
 
 
-@dataclass
-class SiteContext:
-    overview: dict[str, Any]
-    dataset: dict[str, Any]
-    experimental_design: dict[str, Any]
-    validation: dict[str, Any]
-    results: dict[str, Any]
-    qualitative: dict[str, Any]
-    threats: dict[str, Any]
-    reproducibility: dict[str, Any]
-    ai_tools: dict[str, Any]
+def build_site(*, out_dir: Path | None = None, render_plots: bool = True) -> Path:
+    """Collect data + render `templates/index.html.j2` -> `{out}/index.html`.
+    Also copies `templates/static/*` and (optionally) generates plots.
 
-
-def render_site(ctx: SiteContext, *, out_dir: Path = BUILD_DIR) -> Path:
-    """Render `templates/index.html.j2` -> `out_dir/index.html`.
-
-    TODO(week 4): fill in — for now just makes sure the directory exists
-    and returns the target path so scripts can wire the flow.
+    Returns the path to the generated index.html.
     """
-    out_dir.mkdir(parents=True, exist_ok=True)
-    target = out_dir / "index.html"
-    # Actual Jinja2 rendering added in week 4.
-    return target
+    out = out_dir or BUILD_DIR
+    out.mkdir(parents=True, exist_ok=True)
+
+    dataset = [asdict(r) for r in collect.collect_dataset()]
+    infra = asdict(collect.collect_infra_stats())
+    results = collect.collect_results()
+    qualitative = [asdict(q) for q in collect.collect_qualitative_examples()]
+    env_info = collect.collect_env_info()
+    cfg = load_config()
+
+    # Plots — best effort, don't fail the whole build if matplotlib is missing.
+    has_plots = False
+    plots_dir = out / "plots"
+    if render_plots:
+        try:
+            plots.render_all(results or {}, plots_dir)
+            has_plots = True
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] plot generation failed: {e}")
+
+    env = Environment(
+        loader=FileSystemLoader(str(TEMPLATE_DIR)),
+        autoescape=select_autoescape(["html"]),
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+    template = env.get_template("index.html.j2")
+    html = template.render(
+        built_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        env=env_info,
+        n_tasks=len(dataset),
+        n_models=len(cfg.models or DEFAULT_MODELS),
+        models=list(cfg.models or DEFAULT_MODELS),
+        temperature=cfg.temperature,
+        dataset=dataset,
+        mutation_counts=collect.mutation_type_counts(collect.collect_dataset()),
+        infra=infra,
+        results=results,
+        qualitative=qualitative,
+        has_plots=has_plots,
+        docs={
+            "threats": collect.collect_doc("THREATS"),
+            "ai_tools": collect.collect_doc("AI_TOOLS"),
+        },
+    )
+
+    index_path = out / "index.html"
+    index_path.write_text(html, encoding="utf-8")
+
+    # Copy static assets (CSS).
+    static_out = out / "static"
+    static_out.mkdir(exist_ok=True)
+    for asset in STATIC_DIR.iterdir():
+        if asset.is_file():
+            shutil.copy2(asset, static_out / asset.name)
+
+    return index_path
